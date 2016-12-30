@@ -16,7 +16,7 @@ not please me. Here are the actions I've done:
 [root@db-sc1 ~]# rm /etc/cron.daily/exim4-base
 {% endhighlight %}
 
-- Install zsh and some nice tools
+## Install zsh and some nice tools
 {% highlight shell %}
 [root@db-sc1 ~]# apt install tcpdump
 [root@db-sc1 ~]# apt install install zsh git zsh-doc
