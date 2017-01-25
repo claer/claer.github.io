@@ -56,8 +56,9 @@ protocol direct {
 }
 {% endhighlight %}
 
-- Restart the bird daemon and check
+- Restart the bird daemon and check the routing table
 {% highlight shelll %}
 [root@db-xc1 35 ~]# service bird restart
+[root@db-xc1 35 ~]# birdc show route 
 {% endhighlight %}
 
