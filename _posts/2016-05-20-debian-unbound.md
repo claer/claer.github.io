@@ -16,9 +16,9 @@ After reinstalling the home firewall, I wanted to add some dns cache to local do
 
 Welcome to Debian... Debian likes to break configuration on small files, even when the rest of the world is not doing so. To comply to Debian file structure, we will modify the following files:
 
- - /etc/unbound/unbound.conf.d/localbind.conf
- - /etc/unbound/unbound.conf.d/remotecontrol.conf
- - /etc/unbound/unbound.conf.d/stubzone.conf
+  * /etc/unbound/unbound.conf.d/localbind.conf
+  * /etc/unbound/unbound.conf.d/remotecontrol.conf
+  * /etc/unbound/unbound.conf.d/stubzone.conf
 
 The file localbind.conf will control the bind address and the access controls. The file remotecontrol.conf is used to access remote control from localhost. The file stubzone.conf will describe all local zones that needs to be redirected.
 
