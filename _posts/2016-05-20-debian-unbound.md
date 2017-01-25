@@ -15,6 +15,7 @@ After reinstalling the home firewall, I wanted to add some dns cache to local do
 - Configuration of Unbound.
 
 Welcome to Debian... Debian likes to break configuration on small files, even when the rest of the world is not doing so. To comply to Debian file structure, we will modify the following files:
+
  - /etc/unbound/unbound.conf.d/localbind.conf
  - /etc/unbound/unbound.conf.d/remotecontrol.conf
  - /etc/unbound/unbound.conf.d/stubzone.conf
