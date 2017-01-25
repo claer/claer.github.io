@@ -39,8 +39,8 @@ Following are the instructions I used to replace the routed network with one man
 - Define the new network and start it automatically at boot
 {% highlight shell %}
 [root@db-xc1 696 ~]# virsh net-define /root/ovsnetwork.xml
-[root@db-xc1 696 ~]# net-autostart OVSNetwork
-[root@db-xc1 696 ~]# net-start OVSNetwork
+[root@db-xc1 696 ~]# virsh net-autostart OVSNetwork
+[root@db-xc1 696 ~]# virsh net-start OVSNetwork
 {% endhighlight %}
 
 ## Update the Bird configuration file to adapt the routing
