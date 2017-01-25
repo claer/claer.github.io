@@ -62,3 +62,6 @@ protocol direct {
 [root@db-xc1 35 ~]# birdc show route 
 {% endhighlight %}
 
+## Update the VMs
+
+After enabling the new LAN, don't forget to change all VM to the new network. Once done, you can check again the VM are accessible and the bandwidth is corresponding to the real values :)
