@@ -76,6 +76,26 @@ Neither Debian nor Bird provice packages ready for Debian (maybe yes, I just
 didn't find them). Bird provides packages for Ubuntu, not really my cup of tea.
 
 
+## Wireguard generate the encryption keys
+
+The process is different on Debian and OpenBSD. The OpenBSD method requires you
+to bring an interface up and destroy it afterwards. Therefore I'll show you
+here how to generate keys for all hosts on Debian. You will find the way to get
+keys from OpenBSD tooling while reading the blog post. 
+
+- Key material for Debian 1
+{% highlight shell %}
+wg genkey | tee /etc/wireguard/privatekey_debian1.txt | wg pubkey | tee /etc/wireguard/publickey_debian1.txt
+{% endhighlight %}
+- Key material for Debian 2
+{% highlight shell %}
+wg genkey | tee /etc/wireguard/privatekey_debian2.txt | wg pubkey | tee /etc/wireguard/publickey_debian2.txt
+{% endhighlight %}
+- Key material for OpenBSD
+{% highlight shell %}
+wg genkey | tee /etc/wireguard/privatekey_openbsd.txt | wg pubkey | tee /etc/wireguard/publickey_openbsd.txt
+{% endhighlight %}
+
 ## OpenBSD Wireguard configuration
 
 The configuration of wireguard on OpenBSD is really easy. As always with
@@ -95,25 +115,45 @@ experiment the IPv4 inside IPv6 option :)
 For the IP ranges allowed inside the tunnel, I've been very generous by adding
 the whole B and C classes private prefixes.
 
+- Get IP from CrapLiveBox
+{% highlight shell %}
+echo "inet 192.168.1.2/24" >> /etc/hostname.em2
+echo "inet6 autoconf" >> /etc/hostname.em2
+sh /etc/netstart em2
+{% endhighlight %}
+
+- Generate secret key with openssl
+{% highlight shell %}
+openssl rand -base64 32
+<PrivateKey of OpenBSD firewall>
+{% endhighlight %}
+
+- Create /etc/hostname.* files
 file /etc/hostname.wg1
 
 {% highlight conf %}
-wgport 51820 wgkey YPY0P...7ib8V0=
-wgpeer uZc0m...1ZWU= wgendpoint fc80:fc80:fc80:300::1 51820 wgaip 192.168.0.0/16 wgaip 172.16.0.0/12 wgaip 10.0.0.0/8
+wgport 51820 wgkey <PrivateKey of OpenBSD firewall>
+wgpeer <PublicKey of 1st Dedibox> wgendpoint fc80:fc80:fc80:300::1 51820 wgaip 192.168.0.0/16 wgaip 172.16.0.0/12 wgaip 10.0.0.0/8
 inet 172.16.255.1/30 # private IP attached to the network interface
 {% endhighlight %}
 
 file /etc/hostname.wg2
 
 {% highlight conf %}
-wgport 51820 wgkey YPY0P...7ib8V0=
-wgpeer uZc0m...1ZWU= wgendpoint fc80:fc80:fc80:400::1 51820 wgaip 192.168.0.0/16 wgaip 172.16.0.0/12 wgaip 10.0.0.0/8
+wgport 51820 wgkey <PrivateKey of OpenBSD firewall>
+wgpeer <PublicKey of 2nd Dedibox> wgendpoint fc80:fc80:fc80:400::1 51820 wgaip 192.168.0.0/16 wgaip 172.16.0.0/12 wgaip 10.0.0.0/8
 inet 172.16.255.5/30 # private IP attached to the network interface
+{% endhighlight %}
+
+- Get the public keys for each interface
+{% highlight shell %}
+PUB1="`ifconfig wg1 | grep 'wgpubkey' | cut -d ' ' -f 2`"
+PUB2="`ifconfig wg2 | grep 'wgpubkey' | cut -d ' ' -f 2`"
 {% endhighlight %}
 
 - Bring up the tunnel
 {% highlight shell %}
-# sh /etc/netstart wg1 wg2
+sh /etc/netstart wg1 wg2
 {% endhighlight %}
 
 ## Debian IPv6 configuration
@@ -162,22 +202,34 @@ ExecStop=/sbin/dhclient -x -pf /var/run/dhclient6.pid
 WantedBy=network.target
 {% endhighlight %}
 
-- Enable the daemon
+- Start and enable the daemon
 {% highlight shell %}
-# systemctl enable dhclient.service
+systemctl start dhclient.service
+systemctl enable dhclient.service
 {% endhighlight %}
 
+- Now we have IPv6 prefix, add an IP address to the egress interface by adding this piece of code to /etc/network/interface
+{% highlight conf %}
+iface enp0s20 inet6 static
+    address fc80:fc80:fc80:300::1
+    netmask 64
+{% endhighlight %}
+
+- Add the address by hand if you wish immediate connectivity
+{% highlight shell %}
+ip -6 add add fc80:fc80:fc80:300::1/64 dev enp0s20
+{% endhighlight %}
 
 ## Debian Wireguard configuration
 
 - Installing wireguard once on Testing was easy
 {% highlight shell %}
-# apt install wireguard wireguard-tools
+apt install wireguard wireguard-tools
 {% endhighlight %}
 
 - Create the keys following tutorials:
 {% highlight shell %}
-# wg genkey | tee /etc/wireguard/privatekey | wg pubkey | tee /etc/wireguard/publickey
+wg genkey | tee /etc/wireguard/privatekey | wg pubkey | tee /etc/wireguard/publickey
 {% endhighlight %}
 
 - Configuration issues
@@ -192,24 +244,54 @@ not have these defaults. Needless to say which way I prefer...
 Address = 172.16.255.2/30
 SaveConfig = false
 ListenPort = 51820
-PrivateKey = aP......kQ=
+PrivateKey = <PrivateKey of the host>
 Table = off
 
 # Cobra
 [Peer]
-PublicKey = AZE...PcFAI=
+PublicKey = <PublicKey of OpenBSD firewall>
 Endpoint = [fc08:fc08:fc08:fc08:fc08:fa1:df6c:13de]:51820
 AllowedIPs = 172.16.0.0/12, 192.168.0.0/16, 10.0.0.0/8
 {% endhighlight %}
 
+- Use the same template for /etc/wireguard/wg2.conf file
+
 - Bring up the tunnel
 {% highlight shell %}
-# wg-quick up wg1 ; wg-quick up wg2
+wg-quick up wg1
+wg-quick up wg2
+{% endhighlight %}
+
+- Check status
+{% highlight shell %}
+root@db-sc1:~# wg
+interface: wg1
+  public key: <PublicKey of the host>
+  private key: (hidden)
+  listening port: 51820
+
+peer: <PublicKey of OpenBSD firewall>
+  endpoint: [fc08:fc08:fc08:fc08:fc08:fc08:1c48:84c]:51820
+  allowed ips: 172.16.0.0/12, 192.168.0.0/16, 10.0.0.0/8
+  latest handshake: 1 minute, 19 seconds ago
+  transfer: 55.82 MiB received, 1.49 GiB sent
+
+interface: wg2
+  public key: uZ.......................................WU=
+  private key: (hidden)
+  listening port: 51821
+
+peer: <PublicKey of the other Dedibox>
+  endpoint: 163.0.0.1:51821
+  allowed ips: 172.16.0.0/12, 192.168.0.0/16, 10.0.0.0/8
+  latest handshake: 51 seconds ago
+  transfer: 7.20 MiB received, 6.82 MiB sent
+
 {% endhighlight %}
 
 - Update Systemd to enable Wireguard at boot:
 {% highlight shell %}
-# systemctl enable wg-quick@wg1
+systemctl enable wg-quick@wg1
 {% endhighlight %}
 
 ## Testing
@@ -218,3 +300,5 @@ At that point, you should be able to ping from 172.16.255.1 host to
 just add the prefixes with the traditionnal routing tools (route for OpenBSD
 and ip for Linux).
 
+## Next steps
+The next blog post will be about enabling routing daemons to exchange prefixes between hosts.
