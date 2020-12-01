@@ -277,7 +277,7 @@ peer: <PublicKey of OpenBSD firewall>
   transfer: 55.82 MiB received, 1.49 GiB sent
 
 interface: wg2
-  public key: uZ.......................................WU=
+  public key: <PublicKey of the host>
   private key: (hidden)
   listening port: 51821
 
