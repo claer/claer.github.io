@@ -129,11 +129,12 @@ openssl rand -base64 32
 {% endhighlight %}
 
 - Create /etc/hostname.* files
+
 file /etc/hostname.wg1
 
 {% highlight conf %}
 wgport 51820 wgkey <PrivateKey of OpenBSD firewall>
-wgpeer <PublicKey of 1st Dedibox> wgendpoint fc80:fc80:fc80:300::1 51820 wgaip 192.168.0.0/16 wgaip 172.16.0.0/12 wgaip 10.0.0.0/8
+wgpeer <PublicKey of 1st Dedibox> wgpka 20 wgendpoint fc80:fc80:fc80:300::1 51820 wgaip 192.168.0.0/16 wgaip 172.16.0.0/12 wgaip 10.0.0.0/8
 inet 172.16.255.1/30 # private IP attached to the network interface
 {% endhighlight %}
 
@@ -141,7 +142,7 @@ file /etc/hostname.wg2
 
 {% highlight conf %}
 wgport 51820 wgkey <PrivateKey of OpenBSD firewall>
-wgpeer <PublicKey of 2nd Dedibox> wgendpoint fc80:fc80:fc80:400::1 51820 wgaip 192.168.0.0/16 wgaip 172.16.0.0/12 wgaip 10.0.0.0/8
+wgpeer <PublicKey of 2nd Dedibox> wgpka 20 wgendpoint fc80:fc80:fc80:400::1 51820 wgaip 192.168.0.0/16 wgaip 172.16.0.0/12 wgaip 10.0.0.0/8
 inet 172.16.255.5/30 # private IP attached to the network interface
 {% endhighlight %}
 
@@ -292,13 +293,14 @@ peer: <PublicKey of the other Dedibox>
 - Update Systemd to enable Wireguard at boot:
 {% highlight shell %}
 systemctl enable wg-quick@wg1
+systemctl enable wg-quick@wg2
 {% endhighlight %}
 
 ## Testing
-At that point, you should be able to ping from 172.16.255.1 host to
-172.16.255.2 and vice versa. If you want to route more subnets on each side,
-just add the prefixes with the traditionnal routing tools (route for OpenBSD
-and ip for Linux).
+At that point, you need to update your firewall rules then you should be able
+to ping from 172.16.255.1 host to 172.16.255.2 and vice versa. If you want to
+route more subnets on each side, just add the prefixes with the traditionnal
+routing tools (route for OpenBSD and ip for Linux).
 
 ## Next steps
 The next blog post will be about enabling routing daemons to exchange prefixes between hosts.
